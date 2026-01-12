@@ -12,19 +12,23 @@ class CatalogTest
     {
         Console.WriteLine("Start testing");
         CatalogManager catalogManager = new CatalogManager();
-        var schema = SchemaBuilder.Create("user")
-        .AddField("id",DataType.Int32,nullable:false)
-        .AddField("name",DataType.FixedString,length :50)
-        .AddField("age",DataType.Int32)
-        .Build();
-        // get some schema info
-        Console.WriteLine($"Schema Name: {schema.Name}");
-        Console.WriteLine($"Schema Version: {schema.Version}");
-        
+        var schema = SchemaBuilder
+            .Create("users")
+            .AddField("id", DataType.Int32, nullable: false)
+            .AddField("name", DataType.FixedString, length: 16)
+            .Build();
 
-        // debug assert
-        Debug.Assert(schema.Fields[0].Offset == schema.NullBitmapSize);
-        Debug.Assert(schema.RecordSize > 0);
+        var writer = new MetaWriter("meta.dat");
+        writer.WriteSchemas(new[] { schema });
+
+        // ---- restart engine ----
+
+        var reader = new MetaReader("meta.dat");
+        var schemas = reader.ReadSchemas();
+
+        var loaded = schemas["users"];
+        Debug.Assert(loaded.RecordSize == schema.RecordSize);
+        Debug.Assert(loaded.Fields[1].Name == "name");
     }
 }
 }

@@ -8,22 +8,29 @@ using Catalog;
 // create a schema object to store schema info serve for write and read
 namespace Catalog
 {
-class Schema
+public sealed class Schema
 {
     public string Name { get; set; }
-    public List<Field> field{ get; set; } // get list of field
+    public List<Field> field{ get; set; } = new(); // get list of field
     public int Version { get; set; } // version of schema
     public IReadOnlyList<Field> Fields {get;}
     public int RecordSize {get;}
     public int NullBitmapSize{get;}
 
-    internal Schema(string name,int version,List<Field> fields)
+    internal Schema(string name,int version,List<Field> fields, int recordSize = 0, int nullBitmapSize = 0)
     {
         Name = name;
         Version = version;
         Fields = fields.AsReadOnly();
-        NullBitmapSize = (int)Math.Ceiling(fields.Count / 8.0f);
-        RecordSize = Fields.Last().Offset + Fields.Last().Length;
+        if (nullBitmapSize == 0)
+            NullBitmapSize = (int)Math.Ceiling(fields.Count / 8.0f);
+        else
+            NullBitmapSize = nullBitmapSize;
+
+        if (recordSize == 0)
+            RecordSize = Fields.Last().Offset + Fields.Last().Length;
+        else
+            RecordSize = recordSize;
     }    
 }
 
@@ -62,13 +69,18 @@ class SchemaBuilder
         {
             throw new ArgumentException("FixedString requires length");
         }
+        // add offset to this field 
+
+        int offset = GetOffset();
+        
 
         _fields.Add(new Field(fieldId: _nextFieldId++,
         name:name,
         type:type,
         length:length,
         isNullable:nullable,
-        indexed:indexed
+        indexed:indexed,
+        offset:(ushort)offset
         )
         );
 
@@ -87,6 +99,10 @@ class SchemaBuilder
 
         _recordSize = offset;  
     } 
+    private int GetOffset()
+    {
+        return _recordSize;
+    }
 
     private int GetFieldSize(Field field)
     {

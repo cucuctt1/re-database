@@ -19,6 +19,7 @@ namespace Catalog
             string name,
             DataType type,
             ushort length,
+            ushort offset,
             bool isNullable,
             bool indexed
         )
@@ -27,6 +28,7 @@ namespace Catalog
             Name = name;
             Type = type;
             Length = length;
+            Offset = offset;
             IsNullable = isNullable;
             Indexed = indexed;
         }
